@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Token Launch Radar — every pre-token protocol priced off the market's own curve</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <div>
+    <p class="kicker">TOKEN LAUNCH RADAR &middot; MODEL RADAR-CLEAN-5</p>
+    <h1>198 protocols record no token. The market&rsquo;s own size curve prices them at <span id="totalImplied">&mdash;</span>.</h1>
+    <p class="lede">Every protocol the snapshot tracks that records no token and is nobody else&rsquo;s product, priced from the 92 tokens that already trade: a dollar of TVL is worth a different multiple at $5M than at $5B, so the model fits that curve on the snapshot&rsquo;s own traded protocols, then ranks, then shows what each one costs &mdash; net of gas and the T-bill yield forgone. $1,000 at 10% &middot; click a row for the full plan. <strong>No name is hand-picked.</strong></p>
+    <p class="source" id="sourceLine"></p>
+    <p class="selfcheck" id="selfCheck">Checking this page against board.json&hellip;</p>
+  </div>
+</header>
+
+<section class="stats" id="stats"></section>
+
+<section class="panels">
+  <div class="panel">
+    <h2>How a value is built <code>impliedValue()</code></h2>
+    <p class="formula" id="formula"></p>
+    <ol class="how">
+      <li><strong>Size curve.</strong> Least squares on log(market cap) against log(TVL) over the 92 clean comps. A dollar of TVL is worth less, per dollar, as a protocol grows &mdash; the slope is under 1.</li>
+      <li><strong>Growth tilt.</strong> One more week of the protocol&rsquo;s own 7-day TVL move, held to &plusmn;25% of value. A protocol growing fast is worth more than its size alone says.</li>
+      <li><strong>Maturity tilt.</strong> 0.90 for a protocol tracked under a day, 1.10 past three years, 1.00 when DefiLlama gives no date. Older with no token is worth a little more, never a lot.</li>
+      <li><strong>Band.</strong> P10&ndash;P90 over 200 bootstrap refits of the curve, widened by the model&rsquo;s own blind misses. The band is the fit&rsquo;s uncertainty, not a typed-in number.</li>
+    </ol>
+    <p class="note">The curve, the tilts and the band are all fitted here, live, from the snapshot. Change the snapshot and every number on this page moves.</p>
+  </div>
+  <div class="panel">
+    <h2>Traded tokens and the curve</h2>
+    <div id="scatter"></div>
+    <p class="note">Grey: the 92 comps&rsquo; market caps. Teal: the 198 implied values. Line: the fitted curve. The scatter is the argument &mdash; TVL alone explains only a tenth of a token&rsquo;s value, so every number here carries its band.</p>
+  </div>
+  <div class="panel">
+    <h2>Out of sample <code>validate()</code></h2>
+    <div id="ablation"></div>
+    <p class="note">Blind means the token priced was never in the fit. Family offsets and Huber weights were tried the same way and lost where it matters, so they are shown and not used.</p>
+  </div>
+</section>
+
+<section class="farmnext">
+  <h2>Farm next &mdash; best dollars per hour <span class="sub">net of gas and T-bill forgone, $1,000 at 10% &middot; click a card for the full plan</span></h2>
+  <div class="cards" id="farmNext"></div>
+</section>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="board" class="active">Pre-token board <span id="tabBoardN"></span></button>
+  <button data-tab="live">Token trades <span id="tabLiveN"></span></button>
+  <button data-tab="setaside">Set aside <span id="tabSetN"></span></button>
+  <button data-tab="method">Method &amp; backtest</button>
+</nav>
+
+<section class="controls" id="controls">
+  <input id="q" type="search" placeholder="Search name, category or chain&hellip;" aria-label="Search">
+  <select id="fFamily" aria-label="Family"></select>
+  <select id="fChain" aria-label="Chain"></select>
+  <select id="fVerdict" aria-label="Verdict">
+    <option value="">All verdicts</option><option>FARM</option><option>THIN</option><option>SKIP</option>
+  </select>
+  <select id="fWatch" aria-label="Watchlist">
+    <option value="">All 198</option><option value="watch">Watchlist only</option><option value="early">Early only</option>
+  </select>
+  <select id="fDeposit" aria-label="Deposit">
+    <option value="500">$500</option><option value="1000" selected>$1,000</option><option value="5000">$5,000</option><option value="10000">$10,000</option>
+  </select>
+  <select id="fShare" aria-label="Airdrop share">
+    <option value="0.05">5% of value</option><option value="0.1" selected>10% of value</option><option value="0.15">15% of value</option>
+  </select>
+  <button id="resetBtn" type="button">Reset</button>
+  <span class="shown" id="shownCount"></span>
+</section>
+
+<main>
+  <div id="boardWrap">
+    <table id="board">
+      <thead><tr>
+        <th data-sort="rank">#</th><th data-sort="name">Protocol</th><th data-sort="tvl">TVL</th>
+        <th data-sort="change">7D</th><th data-sort="age">No token for</th>
+        <th data-sort="implied">Implied value</th><th data-sort="slice">Slice</th>
+        <th data-sort="net">Net of all costs</th><th data-sort="verdict">Farm</th><th>Fees &middot; Hold</th>
+      </tr></thead>
+      <tbody id="boardBody"></tbody>
+    </table>
+  </div>
+
+  <div id="detail" class="detail" hidden></div>
+
+  <div id="liveWrap" hidden>
+    <p class="note">These protocols already trade, so the board shows the market&rsquo;s own value for them, never a model&rsquo;s. They are the curve&rsquo;s comps and its check, not its ranking.</p>
+    <table id="liveTable">
+      <thead><tr><th>#</th><th>Protocol</th><th>TVL</th><th>Market cap</th><th>&times; TVL</th><th>7D</th></tr></thead>
+      <tbody id="liveBody"></tbody>
+    </table>
+  </div>
+
+  <div id="setWrap" hidden>
+    <p class="note">Pre-token protocols the board does not rank, with the rule that set each one aside. A protocol below the floor, or one this list leaves out for another reason, is no worse a subject &mdash; it is simply not what this board prices.</p>
+    <table id="setTable">
+      <thead><tr><th>#</th><th>Protocol</th><th>TVL</th><th>Reason</th></tr></thead>
+      <tbody id="setBody"></tbody>
+    </table>
+  </div>
+
+  <div id="methodWrap" hidden>
+    <h2>Method &amp; backtest</h2>
+    <div id="methodBody"></div>
+    <h3>Tenure: share of protocols whose token trades, by age</h3>
+    <div id="tenure"></div>
+    <p class="note">Age is the days since DefiLlama began tracking the protocol. Most protocols wait years, and a third of the youngest still have no token &mdash; which is why the maturity tilt is small and bounded.</p>
+  </div>
+</main>
+
+<footer>
+  <p>An implied value is this page&rsquo;s own claim about what a token would be worth if the protocol&rsquo;s record stayed as it is. It predicts no launch: a protocol here records no token, which is not proof it has none. Gas, drop share and carry are stated assumptions, not prices. Source: <span id="footSource"></span></p>
+</footer>
+<script src="../data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
